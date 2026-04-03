@@ -299,7 +299,7 @@ const Chat = ({
   useEffect(() => {
     if (socket && activeChat) {
       const receiverId =
-        user.role === "student"
+        user?.role === "student"
           ? activeChat.instructor._id
           : activeChat.student._id;
 
@@ -316,15 +316,15 @@ const Chat = ({
         socket.emit("stop typing", { receiverId });
       };
     }
-  }, [inputMessage, socket, activeChat, user.role]);
+  }, [inputMessage, socket, activeChat, user?.role]);
 
   useEffect(() => {
     if (activeChat) {
       const otherUser =
-        user.role === "student" ? activeChat.instructor : activeChat.student;
+        user?.role === "student" ? activeChat.instructor : activeChat.student;
       setIsOnline(onlineUsers.includes(otherUser._id));
     }
-  }, [activeChat, onlineUsers, user.role]);
+  }, [activeChat, onlineUsers, user?.role]);
 
   useEffect(() => {
     if (visible && user) {
@@ -457,7 +457,7 @@ const Chat = ({
         {
           courseId: activeChat.course._id,
           receiverId:
-            user.role === "student"
+            user?.role === "student"
               ? activeChat.instructor._id
               : activeChat.student._id,
           content: inputMessage,
@@ -1064,9 +1064,9 @@ const Chat = ({
                   src={
                     user.role === "student"
                       ? activeChat.instructor?.photoUrl ||
-                        "https://github.com/shadcn.png"
+                      "https://github.com/shadcn.png"
                       : activeChat.student?.photoUrl ||
-                        "https://github.com/shadcn.png"
+                      "https://github.com/shadcn.png"
                   }
                   icon={<UserOutlined />}
                   style={{ backgroundColor: "#1890ff" }}
@@ -1204,8 +1204,8 @@ const Chat = ({
                           activeChat?._id === chat._id
                             ? "#e8f4fd"
                             : hasUnread
-                            ? "#f0f8ff"
-                            : "#fff",
+                              ? "#f0f8ff"
+                              : "#fff",
                         borderBottom: "1px solid #ecf0f1",
                         transition: "background-color 0.3s",
                       }}
@@ -1217,9 +1217,9 @@ const Chat = ({
                               src={
                                 user.role === "student"
                                   ? chat.instructor?.photoUrl ||
-                                    "https://github.com/shadcn.png"
+                                  "https://github.com/shadcn.png"
                                   : chat.student?.photoUrl ||
-                                    "https://github.com/shadcn.png"
+                                  "https://github.com/shadcn.png"
                               }
                               icon={<UserOutlined />}
                               style={{ backgroundColor: "#1890ff" }}

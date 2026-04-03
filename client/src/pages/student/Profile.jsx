@@ -69,10 +69,10 @@ const Profile = () => {
   const user = data && data.user;
 
   console.log(user);
-  
+
 
   return (
-    <div className="max-w-4xl mx-auto px-4 my-10">
+    <div className="px-4 my-10">
       <h1 className="font-bold text-2xl text-center md:text-left">PROFILE</h1>
       <div className="flex flex-col md:flex-row items-center md:items-start gap-8 my-5">
         <div className="flex flex-col items-center">

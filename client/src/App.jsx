@@ -9,6 +9,8 @@ import HeroSection from "./pages/student/HeroSection";
 import MainLayout from "./layout/MainLayout";
 import MyLearning from "./pages/student/MyLearning";
 import Profile from "./pages/student/Profile";
+import AccountLayout from "./layout/AccountLayout";
+
 import Sidebar from "./pages/admin/Sidebar";
 import Dashboard from "./pages/admin/Dashboard";
 import CourseTable from "./pages/admin/course/CourseTable";
@@ -59,7 +61,10 @@ const appRouter = createBrowserRouter([
           </>
         ),
       },
-
+      {
+        path: "course/search",
+        element: <SearchPage />,
+      },
       {
         path: "login",
         element: (
@@ -68,144 +73,88 @@ const appRouter = createBrowserRouter([
           </AuthenticatedUser>
         ),
       },
-
       {
-        path: "dashboard",
+        path: "course-detail/:courseId",
+        element: <CourseDetail />,
+      },
+      {
+        path: "course-progress/:courseId",
         element: (
           <ProtectedRoute>
-            <StudentDashboard />
+            <PurchaseCourseProtectedRoute>
+              <CourseProgress />
+            </PurchaseCourseProtectedRoute>
           </ProtectedRoute>
         ),
       },
-
       {
-        path: "my-learning",
         element: (
           <ProtectedRoute>
-            <MyLearning />
+            <AccountLayout />
           </ProtectedRoute>
         ),
-      },
-
-      {
-        path: "chat",
-        element: (
-          <ProtectedRoute>
-            <ChatPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "profile",
-        element: (
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "cbt",
-        element: (
-          <ProtectedRoute>
-            <IntroPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "ai-roadmap",
-        element: (
-          <ProtectedRoute>
-            <AIRoadmap />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "ai-roadmap/track-progress",
-        element: (
-          <ProtectedRoute>
-            <TrackProgress />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "ai-roadmap/history",
-        element: (
-          <ProtectedRoute>
-            <RoadmapHistory />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "college-predictor",
-        element: (
-          <ProtectedRoute>
-            <CollegePredictor />
-          </ProtectedRoute>
-        ),
-      },
-
-    // AI Examinar flow 
-
-      {
-        path: "ai-examiner",
-        element: (
-          <ProtectedRoute>
-            <AIExaminer />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "ai-examiner/detected/:submissionId",
-        element: (
-          <ProtectedRoute>
-            <DetectedAnswers />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "ai-examiner/result/:submissionId",
-        element: (
-          <ProtectedRoute>
-            <AIExaminerResult />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "ai-examiner/colleges",
-        element: (
-          <ProtectedRoute>
-            <Colleges />
-          </ProtectedRoute>
-        ),
-      },
-
-    //  CBT or Normal exam 
-
-      {
-        path: "exam/attempt/:attemptId",
-        element: (
-          <ProtectedRoute>
-            <StudentExamPage />
-          </ProtectedRoute>
-        ),
-      },
-
-      {
-        path: "exam/result/:attemptId",
-        element: (
-          <ProtectedRoute>
-            <ResultsPage />
-          </ProtectedRoute>
-        ),
+        children: [
+          {
+            path: "dashboard",
+            element: <StudentDashboard />,
+          },
+          {
+            path: "my-learning",
+            element: <MyLearning />,
+          },
+          {
+            path: "chat",
+            element: <ChatPage />,
+          },
+          {
+            path: "profile",
+            element: <Profile />,
+          },
+          {
+            path: "cbt",
+            element: <IntroPage />,
+          },
+          {
+            path: "ai-roadmap",
+            element: <AIRoadmap />,
+          },
+          {
+            path: "ai-roadmap/track-progress",
+            element: <TrackProgress />,
+          },
+          {
+            path: "ai-roadmap/history",
+            element: <RoadmapHistory />,
+          },
+          {
+            path: "college-predictor",
+            element: <CollegePredictor />,
+          },
+          {
+            path: "ai-examiner",
+            element: <AIExaminer />,
+          },
+          {
+            path: "ai-examiner/detected/:submissionId",
+            element: <DetectedAnswers />,
+          },
+          {
+            path: "ai-examiner/result/:submissionId",
+            element: <AIExaminerResult />,
+          },
+          {
+            path: "ai-examiner/colleges",
+            element: <Colleges />,
+          },
+          {
+            path: "exam/attempt/:attemptId",
+            element: <StudentExamPage />,
+          },
+          {
+            path: "exam/result/:attemptId",
+            element: <ResultsPage />,
+          },
+        ],
       },
 
       // admin 

@@ -30,7 +30,7 @@ const CourseDetail = () => {
   console.log(purchased);
 
   const handleContinueCourse = () => {
-    if(purchased){
+    if (purchased) {
       navigate(`/course-progress/${courseId}`)
     }
   }
@@ -118,13 +118,17 @@ const CourseDetail = () => {
               {purchased ? (
                 <Button onClick={handleContinueCourse} className="w-full">Continue Course</Button>
               ) : (
-                <BuyCourseButton courseId={courseId} />
+                <BuyCourseButton
+                  courseId={courseId}
+                  courseTitle={course?.courseTitle}
+                  coursePrice={course?.coursePrice}
+                />
               )}
             </CardFooter>
           </Card>
         </div>
       </div>
-      <Review/>
+      <Review />
     </div>
   );
 };

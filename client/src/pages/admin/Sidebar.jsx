@@ -8,6 +8,9 @@ const Sidebar = () => {
     <div className="flex">
       <div className="hidden lg:block w-[250px] sm:w-[300px] space-y-8 border-r border-gray-300 dark:border-gray-700  p-5 sticky top-0  h-screen">
         <div className="space-y-4 ">
+          <Link to="/" className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm">
+            <h1>Got back to Home</h1>
+          </Link>
           <Link to="dashboard" className="flex items-center gap-2">
             <ChartNoAxesColumn size={22} />
             <h1>Dashboard</h1>

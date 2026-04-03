@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import Filter from "./Filter";
 import SearchResult from "./SearchResult";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useGetSearchCourseQuery } from "@/features/api/courseApi";
+import { useGetPublishedCourseQuery } from "@/features/api/courseApi";
+import { useAiSearchCoursesQuery } from "@/features/api/searchApi";
 import { useGetPurchasedCoursesQuery } from "@/features/api/purchaseApi";
 import { useGetStudentDashboardQuery } from "@/features/api/authApi";
 import { Link, useSearchParams } from "react-router-dom";
@@ -31,10 +32,10 @@ const SearchPage = () => {
     );
   }, [purchasedData, dashboardData]);
 
-  const { data, isLoading, error } = useGetSearchCourseQuery({
-    searchQuery: query,
-    categories: selectedCategories,
-    sortByPrice,
+  const { data, isLoading, error } = useAiSearchCoursesQuery({
+    query: query,
+    category: selectedCategories.length > 0 ? selectedCategories[0] : undefined,
+    sortBy: sortByPrice === "low" ? "price_low" : sortByPrice === "high" ? "price_high" : sortByPrice,
   });
 
   // Handle the AI search response format
@@ -47,8 +48,8 @@ const SearchPage = () => {
       ? `${totalResults} courses available`
       : "Explore our courses"
     : totalResults > 0
-    ? `Found ${totalResults} results for "${query}"`
-    : `Results for "${query}"`;
+      ? `Found ${totalResults} results for "${query}"`
+      : `Results for "${query}"`;
   const isEmpty = !isLoading && courses.length === 0;
 
   const handleFilterChange = (categories, price) => {
@@ -80,7 +81,7 @@ const SearchPage = () => {
         )}
       </div>
       <div className="flex flex-col md:flex-row gap-10">
-        <Filter handleFilterChange={handleFilterChange}/>
+        <Filter handleFilterChange={handleFilterChange} />
         <div className="flex-1">
           {isLoading ? (
             Array.from({ length: 3 }).map((_, idx) => (

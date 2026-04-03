@@ -41,7 +41,7 @@ const CourseProgress = () => {
   console.log(instructor)
   const isCompleted = localCompleted !== null ? localCompleted : completed;
 
-  const initialLecture = currentLecture || courseDetails.lectures[0];
+  const initialLecture = currentLecture || (courseDetails?.lectures && courseDetails.lectures.length > 0 ? courseDetails.lectures[0] : null);
 
   const isLectureCompleted = (lectureId) => {
     return progress.some((prog) => prog.lectureId === lectureId && prog.viewed) || false;
@@ -88,7 +88,7 @@ const CourseProgress = () => {
       <div className="flex justify-between mb-4 flex-col md:flex-row gap-2 md:gap-0">
         <h1 className="text-2xl font-bold">{courseTitle}</h1>
         <div className="flex items-center gap-2">
-          
+
           {purchased && instructor?._id && (
             <Chat
               courseId={courseId}
@@ -107,25 +107,29 @@ const CourseProgress = () => {
             variant={isCompleted ? "outline" : "default"}
             className="flex items-center gap-2"
           >
-            
+
             <CheckCircle className="h-4 w-4" />
             {isCompleted ? "Completed" : "Mark as completed"}
           </Button>
         </div>
       </div>
-          {isCompleted && (
-            <p className="text-sm text-green-600 mb-4">
-              🎉 You’ve completed the course. A certificate has been emailed to you!
-            </p>
-          )}
-        
-      
+      {isCompleted && (
+        <p className="text-sm text-green-600 mb-4">
+          🎉 You’ve completed the course. A certificate has been emailed to you!
+        </p>
+      )}
+
+
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Lecture Video / PDF Section */}
         <div className="flex-1 md:w-3/5 h-fit rounded-lg shadow-lg p-4">
           <div>
-            {(() => {
+            {(!initialLecture && !currentLecture) ? (
+              <div className="flex flex-col items-center justify-center border border-dashed border-gray-400 p-8 rounded-lg text-center">
+                <p className="text-lg font-medium">No lectures available for this course yet.</p>
+              </div>
+            ) : (() => {
               const currentUrl = currentLecture?.videoUrl || initialLecture?.videoUrl;
               const isPdf = currentUrl?.toLowerCase().endsWith(".pdf");
 
@@ -140,7 +144,7 @@ const CourseProgress = () => {
                     rel="noopener noreferrer"
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
                     onClick={() =>
-                      handleLectureProgress(currentLecture?._id || initialLecture._id)
+                      handleLectureProgress(currentLecture?._id || initialLecture?._id)
                     }
                   >
                     View PDF
@@ -152,24 +156,23 @@ const CourseProgress = () => {
                   controls
                   className="w-full h-auto md:rounded-lg"
                   onPlay={() =>
-                    handleLectureProgress(currentLecture?._id || initialLecture._id)
+                    handleLectureProgress(currentLecture?._id || initialLecture?._id)
                   }
                 />
               );
             })()}
           </div>
 
-          {/* Current Lecture Title */}
           <div className="mt-2">
             <h3 className="font-medium text-lg">
-              {`Lecture ${
-                courseDetails.lectures.findIndex(
+              {initialLecture || currentLecture ? (
+                `Lecture ${courseDetails.lectures.findIndex(
                   (lec) =>
-                    lec._id === (currentLecture?._id || initialLecture._id)
+                    lec._id === (currentLecture?._id || initialLecture?._id)
                 ) + 1
-              } : ${
-                currentLecture?.lectureTitle || initialLecture.lectureTitle
-              }`}
+                } : ${currentLecture?.lectureTitle || initialLecture?.lectureTitle
+                }`
+              ) : "No Lecture Selected"}
             </h3>
           </div>
         </div>
@@ -181,16 +184,15 @@ const CourseProgress = () => {
             {courseDetails?.lectures.map((lecture) => (
               <Card
                 key={lecture._id}
-                className={`mb-3 hover:cursor-pointer transition transform ${
-                  lecture._id === currentLecture?._id
+                className={`mb-3 hover:cursor-pointer transition transform ${lecture._id === currentLecture?._id
                     ? "bg-gray-200 dark:dark:bg-gray-800"
                     : ""
-                }`}
+                  }`}
                 onClick={() => handleSelectLecture(lecture)}
               >
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="flex items-center">
-                    {(isCompleted ||isLectureCompleted(lecture._id)) ? (
+                    {(isCompleted || isLectureCompleted(lecture._id)) ? (
                       <CheckCircle2 size={24} className="text-green-500 mr-2" />
                     ) : (
                       <CirclePlay size={24} className="text-gray-500 mr-2" />

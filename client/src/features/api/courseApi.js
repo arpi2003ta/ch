@@ -20,28 +20,6 @@ export const courseApi = createApi({
       }),
       invalidatesTags: ["Refetch_Creator_Course"],
     }),
-    getSearchCourse: builder.query({
-      query: ({ searchQuery, categories, sortByPrice }) => {
-        const params = new URLSearchParams();
-
-        if (searchQuery) params.append("query", searchQuery);
-        
-        if (categories && categories.length > 0) {
-          params.append("category", categories[0]); // Use first category as filter
-        }
-
-        // Map sortByPrice to our AI search sortBy parameter
-        if (sortByPrice === "low") params.append("sortBy", "price_low");
-        else if (sortByPrice === "high") params.append("sortBy", "price_high");
-        else if (sortByPrice) params.append("sortBy", sortByPrice);
-
-        return {
-          url: `${API_BASE_URL}/search/courses?${params.toString()}`,
-          method: "GET",
-        };
-      },
-    }),
-
     getPublishedCourse: builder.query({
       query: () => ({
         url: "/published-courses",

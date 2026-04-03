@@ -38,62 +38,6 @@ const getProgressColor = (value) => {
   return "bg-amber-500";
 };
 
-// 1. Sidebar Component
-const Sidebar = ({ active = "Dashboard", canChat = false, onOpenChat }) => {
-  const navigate = useNavigate();
-
-  const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: GraduationCap, label: "My learning", path: "/my-learning" },
-    { icon: MessageSquare, label: "Chat with Instructor", action: "openChat", requiresEnrollment: true },
-    { icon: Settings, label: "Edit Profile", path: "/profile" },
-    { icon: FileText, label: "CBT Practice", path: "/cbt" },
-    { icon: HelpCircle, label: "AI Examiner", path: "/ai-examiner" },
-    { icon: Target, label: "Personalized Roadmap", path: "/ai-roadmap" },
-    { icon: Calendar, label: "College Predictor", path: "/college-predictor" },
-  ];
-
-  return (
-    <aside className="hidden lg:flex w-64 flex-col fixed left-0 top-0 bottom-0 border-r bg-background z-50">
-      <div className="h-16 flex items-center px-6 border-b">
-        <div className="flex items-center gap-2 font-bold text-xl text-emerald-600">
-          <div className="h-8 w-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center">
-            S
-          </div>
-          SmartEdu
-        </div>
-      </div>
-      <nav className="flex-1 py-6 px-3 space-y-1">
-        {menuItems.map((item) => (
-          <button
-            key={item.label}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              active === item.label
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
-            }`}
-            onClick={() => {
-              if (item.requiresEnrollment && !canChat) {
-                toast.error(
-                  "You have not enrolled in any courses. Enroll in a course to access chats."
-                );
-                return;
-              }
-              if (item.action === "openChat") {
-                if (typeof onOpenChat === "function") onOpenChat();
-                return;
-              }
-              if (item.path) navigate(item.path);
-            }}
-          >
-            <item.icon className="h-4 w-4" />
-            {item.label}
-          </button>
-        ))}
-      </nav>
-    </aside>
-  );
-};
 
 // 2. Stat Card
 const StatCard = ({ icon: Icon, label, value, trend, trendUp }) => (
@@ -131,19 +75,19 @@ const CourseItem = ({ course, navigate }) => {
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex justify-between items-start mb-1">
-            <h4 className="font-semibold text-sm sm:text-base truncate pr-2 text-slate-900 dark:text-slate-100">
-                {course.courseTitle}
-            </h4>
-            <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex h-5">
-                {course.courseLevel || "Beginner"}
-            </Badge>
+          <h4 className="font-semibold text-sm sm:text-base truncate pr-2 text-slate-900 dark:text-slate-100">
+            {course.courseTitle}
+          </h4>
+          <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex h-5">
+            {course.courseLevel || "Beginner"}
+          </Badge>
         </div>
         <p className="text-xs text-muted-foreground mb-3 truncate">
-            {course.creator?.name || "Instructor"}
+          {course.creator?.name || "Instructor"}
         </p>
         <div className="flex items-center gap-3">
-            <Progress value={progress} className="h-1.5 flex-1" indicatorColor={getProgressColor(progress)} />
-            <span className="text-xs font-medium w-8 text-right text-muted-foreground">{progress}%</span>
+          <Progress value={progress} className="h-1.5 flex-1" indicatorColor={getProgressColor(progress)} />
+          <span className="text-xs font-medium w-8 text-right text-muted-foreground">{progress}%</span>
         </div>
       </div>
       <div className="h-8 w-8 rounded-full border flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white group-hover:border-emerald-500 transition-colors">
@@ -278,288 +222,277 @@ const StudentDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-zinc-950 text-slate-900 dark:text-slate-50">
-      <Sidebar
-        canChat={courses.length > 0}
-        onOpenChat={() => setIsChatOpen(true)}
-      />
+    <div className="flex flex-col">
 
-      <Chat open={isChatOpen} onOpenChange={setIsChatOpen} hideTrigger />
-
-      {/* Main Layout Wrapper */}
-      <div className="lg:ml-64 min-h-screen flex flex-col">
-        
-        {/* Header */}
-        <header className="h-16 border-b bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative w-full">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onKeyDown={handleSearchKeyDown}
-                onFocus={handleSearchFocus}
-                onBlur={handleSearchBlur}
-                placeholder="Search for courses..."
-                className="h-9 w-full rounded-full border border-slate-200 bg-slate-100/50 dark:bg-slate-800 dark:border-slate-700 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-              />
-
-              {showSuggestions && (suggestionsLoading || suggestions.length > 0) && (
-                <div className="absolute z-50 mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-56 overflow-y-auto text-sm">
-                  {suggestionsLoading ? (
-                    <div className="px-3 py-2 text-slate-400">Searching...</div>
-                  ) : (
-                    suggestions.map((s, idx) => (
-                      <button
-                        key={idx}
-                        type="button"
-                        className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-left"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          handleSuggestionClick(s);
-                        }}
-                      >
-                        <Search className="h-3 w-3 text-slate-400" />
-                        <span className="truncate">{s}</span>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
-        <main className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
-          
-          {/* Welcome & Title */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Dashboard
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                Welcome back, {firstName}. You have <span className="font-medium text-emerald-600">2 tasks</span> pending today.
-              </p>
-            </div>
-            <div className="flex gap-2">
-               <Button onClick={() => navigate("/course/search")} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900">
-                 Explore Courses
-               </Button>
-            </div>
-          </div>
-
-          {/* Top Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              icon={BookOpen}
-              label="Total Enrolled"
-              value={isLoading ? "--" : stats?.total ?? 0}
-              trend="+2 this month"
-              trendUp={true}
+      {/* Header */}
+      <header className="h-16 border-b bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-40 px-6 flex items-center">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="relative w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={handleSearchFocus}
+              onBlur={handleSearchBlur}
+              placeholder="Search for courses..."
+              className="h-9 w-full rounded-full border border-slate-200 bg-slate-100/50 dark:bg-slate-800 dark:border-slate-700 pl-9 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
             />
-            <StatCard
-              icon={Clock}
-              label="Study Hours"
-              value={isLoading ? "--" : `${stats?.totalHours ?? "0"}h`}
-              trend="+12% vs last week"
-              trendUp={true}
-            />
-            <StatCard
-              icon={CheckCircle2}
-              label="Completed"
-              value={isLoading ? "--" : stats?.completed ?? 0}
-              trend="Keep going!"
-              trendUp={true}
-            />
-            <StatCard
-              icon={Trophy}
-              label="Avg. Score"
-              value={isLoading || stats?.avgScore == null ? "--" : `${stats.avgScore}%`}
-              trend="-2% vs last week"
-              trendUp={false}
-            />
-          </div>
 
-          {/* MAIN GRID LAYOUT */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-            
-            {/* LEFT COLUMN (Content & Charts) - Spans 2 cols */}
-            <div className="xl:col-span-2 space-y-6">
-              
-              {/* 1. Bar Chart & Topic Performance Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                {/* Activity Graph */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Weekly Activity</CardTitle>
-                        <CardDescription>Time spent learning per day</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="h-[180px] flex items-end justify-between gap-2">
-                            {weeklyActivity.map((height, idx) => (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
-                                    <div 
-                                        className="w-full max-w-[32px] bg-slate-100 dark:bg-slate-800 rounded-t-sm relative overflow-hidden transition-all group-hover:bg-slate-200"
-                                        style={{ height: `${height}%` }}
-                                    >
-                                        <div className="absolute bottom-0 left-0 right-0 bg-emerald-500 opacity-90 h-full transform translate-y-[20%] group-hover:translate-y-0 transition-transform duration-500 rounded-t-sm" />
-                                    </div>
-                                    <span className="text-[10px] text-muted-foreground font-medium uppercase">
-                                        {["S", "M", "T", "W", "T", "F", "S"][idx]}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Subject Performance Widget (API-driven) */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base">Topic Performance</CardTitle>
-                        <CardDescription>Your strongest areas</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-5">
-                        {topicData.map((item, i) => (
-                            <div key={i} className="space-y-1.5">
-                                <div className="flex justify-between text-xs font-medium">
-                                    <span>{item.label}</span>
-                                    <span className="text-muted-foreground">{item.percent}%</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                    <div className={`h-full ${item.colorClass} rounded-full`} style={{ width: `${item.percent}%` }} />
-                                </div>
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-              </div>
-
-              {/* 2. Enrolled Courses List */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between px-1">
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    In Progress Courses
-                  </h2>
-                  <Button variant="link" className="text-emerald-600 h-auto p-0 text-xs">View All</Button>
-                </div>
-                {courses.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-4">
-                    {courses.map((course) => (
-                      <CourseItem key={course._id} course={course} navigate={navigate} />
-                    ))}
-                  </div>
+            {showSuggestions && (suggestionsLoading || suggestions.length > 0) && (
+              <div className="absolute z-50 mt-1 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg max-h-56 overflow-y-auto text-sm">
+                {suggestionsLoading ? (
+                  <div className="px-3 py-2 text-slate-400">Searching...</div>
                 ) : (
-                  <Card className="border-dashed shadow-none bg-slate-50">
-                    <CardContent className="flex flex-col items-center justify-center py-10 text-center">
-                      <BookOpen className="h-8 w-8 text-slate-300 mb-2" />
-                      <p className="text-sm text-slate-500">No active courses.</p>
-                    </CardContent>
-                  </Card>
+                  suggestions.map((s, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-left"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        handleSuggestionClick(s);
+                      }}
+                    >
+                      <Search className="h-3 w-3 text-slate-400" />
+                      <span className="truncate">{s}</span>
+                    </button>
+                  ))
                 )}
               </div>
-            </div>
+            )}
+          </div>
+        </div>
+      </header>
 
-            {/* RIGHT COLUMN (Widgets) - Spans 1 col */}
-            <div className="space-y-6">
-              
-              {/* Daily Goal Ring Widget (NEW) */}
-              <Card className="bg-emerald-600 text-white border-none shadow-lg relative overflow-hidden">
-                <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base flex items-center gap-2 text-white">
-                        <Target className="h-4 w-4" /> Daily Target
-                    </CardTitle>
+      {/* Dashboard Content */}
+      <main className="flex-1 p-6 space-y-6 w-full">
+
+        {/* Welcome & Title */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Dashboard
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+              Welcome back, {firstName}. You have <span className="font-medium text-emerald-600">2 tasks</span> pending today.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={() => navigate("/course/search")} className="bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900">
+              Explore Courses
+            </Button>
+          </div>
+        </div>
+
+        {/* Top Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={BookOpen}
+            label="Total Enrolled"
+            value={isLoading ? "--" : stats?.total ?? 0}
+            trend="+2 this month"
+            trendUp={true}
+          />
+          <StatCard
+            icon={Clock}
+            label="Study Hours"
+            value={isLoading ? "--" : `${stats?.totalHours ?? "0"}h`}
+            trend="+12% vs last week"
+            trendUp={true}
+          />
+          <StatCard
+            icon={CheckCircle2}
+            label="Completed"
+            value={isLoading ? "--" : stats?.completed ?? 0}
+            trend="Keep going!"
+            trendUp={true}
+          />
+          <StatCard
+            icon={Trophy}
+            label="Avg. Score"
+            value={isLoading || stats?.avgScore == null ? "--" : `${stats.avgScore}%`}
+            trend="-2% vs last week"
+            trendUp={false}
+          />
+        </div>
+
+        {/* MAIN GRID LAYOUT */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+
+          {/* LEFT COLUMN (Content & Charts) - Spans 2 cols */}
+          <div className="xl:col-span-2 space-y-6">
+
+            {/* 1. Bar Chart & Topic Performance Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              {/* Activity Graph */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Weekly Activity</CardTitle>
+                  <CardDescription>Time spent learning per day</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-col items-center pb-6">
-                    <div className="relative h-32 w-32 flex items-center justify-center">
-                        {/* CSS-based Circular Progress mockup */}
-                        <div className="absolute inset-0 rounded-full border-[8px] border-emerald-500"></div>
-                        <div className="absolute inset-0 rounded-full border-[8px] border-white border-l-transparent border-b-transparent rotate-45"></div>
-                        <div className="text-center">
-                            <span className="text-3xl font-bold">{dailyTargetPercent}%</span>
-                            <p className="text-[10px] text-emerald-100 uppercase tracking-wide">Achieved</p>
+                <CardContent>
+                  <div className="h-[180px] flex items-end justify-between gap-2">
+                    {weeklyActivity.map((height, idx) => (
+                      <div key={idx} className="flex-1 flex flex-col items-center gap-2 group">
+                        <div
+                          className="w-full max-w-[32px] bg-slate-100 dark:bg-slate-800 rounded-t-sm relative overflow-hidden transition-all group-hover:bg-slate-200"
+                          style={{ height: `${height}%` }}
+                        >
+                          <div className="absolute bottom-0 left-0 right-0 bg-emerald-500 opacity-90 h-full transform translate-y-[20%] group-hover:translate-y-0 transition-transform duration-500 rounded-t-sm" />
                         </div>
-                    </div>
-                    <p className="text-sm mt-2 font-medium text-emerald-50">{todayHours}h / {dailyGoalHours}h Goal</p>
-                    <div className="mt-3 flex items-center gap-1 text-[10px]">
-                      <span className="uppercase tracking-wide text-emerald-100/80 mr-1">Set goal:</span>
-                      {[60, 120, 180].map((minutes) => {
-                        const label = `${minutes / 60}h`;
-                        const active = minutes === dailyGoalMinutes;
-                        return (
-                          <button
-                            key={minutes}
-                            type="button"
-                            onClick={() => setDailyGoalMinutes(minutes)}
-                            className={`px-2 py-1 rounded-full border text-[10px] transition-colors ${
-                              active
-                                ? "bg-white text-emerald-700 border-white"
-                                : "border-emerald-400/70 text-emerald-50/90 hover:bg-emerald-500/40"
-                            }`}
-                          >
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
+                        <span className="text-[10px] text-muted-foreground font-medium uppercase">
+                          {["S", "M", "T", "W", "T", "F", "S"][idx]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Upcoming Exams */}
+              {/* Subject Performance Widget (API-driven) */}
               <Card>
-                  <CardHeader className="pb-3">
-                      <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Upcoming</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {upcomingExams.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No upcoming exams scheduled.</p>
-                    ) : (
-                      upcomingExams.map((exam, i) => {
-                        const colorClasses = [
-                          "text-red-600 bg-red-50 dark:bg-red-900/20",
-                          "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
-                          "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20",
-                        ];
-                        const color = colorClasses[i % colorClasses.length];
-                        return (
-                          <div key={exam.id || i} className="flex items-center gap-3">
-                              <div className={`h-10 w-10 rounded-lg flex-shrink-0 flex items-center justify-center ${color}`}>
-                                  <CalendarClock className="h-5 w-5" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                  <h5 className="text-sm font-semibold truncate text-slate-800 dark:text-slate-200">{exam.title}</h5>
-                                  <p className="text-[11px] text-muted-foreground font-medium">{exam.dateLabel || exam.date}</p>
-                              </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </CardContent>
+                <CardHeader>
+                  <CardTitle className="text-base">Topic Performance</CardTitle>
+                  <CardDescription>Your strongest areas</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {topicData.map((item, i) => (
+                    <div key={i} className="space-y-1.5">
+                      <div className="flex justify-between text-xs font-medium">
+                        <span>{item.label}</span>
+                        <span className="text-muted-foreground">{item.percent}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className={`h-full ${item.colorClass} rounded-full`} style={{ width: `${item.percent}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
               </Card>
+            </div>
 
-              {/* Streak Small Widget (API-driven) */}
-              <div className="bg-slate-900 text-white rounded-xl p-4 flex items-center justify-between shadow-md">
-                 <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center">
-                        <Flame className="h-5 w-5 text-orange-500 fill-orange-500" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-bold">{streak.current || 0} Day Streak</p>
-                        <p className="text-xs text-slate-400">Longest: {streak.longest || 0} days</p>
-                    </div>
-                 </div>
-                 <Button size="sm" variant="secondary" className="h-8 text-xs bg-white text-slate-900 hover:bg-slate-200">View</Button>
+            {/* 2. Enrolled Courses List */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  In Progress Courses
+                </h2>
+                <Button variant="link" className="text-emerald-600 h-auto p-0 text-xs">View All</Button>
               </div>
-
+              {courses.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                  {courses.map((course) => (
+                    <CourseItem key={course._id} course={course} navigate={navigate} />
+                  ))}
+                </div>
+              ) : (
+                <Card className="border-dashed shadow-none bg-slate-50">
+                  <CardContent className="flex flex-col items-center justify-center py-10 text-center">
+                    <BookOpen className="h-8 w-8 text-slate-300 mb-2" />
+                    <p className="text-sm text-slate-500">No active courses.</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
-        </main>
-      </div>
+
+          {/* RIGHT COLUMN (Widgets) - Spans 1 col */}
+          <div className="space-y-6">
+
+            {/* Daily Goal Ring Widget (NEW) */}
+            <Card className="bg-emerald-600 text-white border-none shadow-lg relative overflow-hidden">
+              <div className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2 text-white">
+                  <Target className="h-4 w-4" /> Daily Target
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center pb-6">
+                <div className="relative h-32 w-32 flex items-center justify-center">
+                  {/* CSS-based Circular Progress mockup */}
+                  <div className="absolute inset-0 rounded-full border-[8px] border-emerald-500"></div>
+                  <div className="absolute inset-0 rounded-full border-[8px] border-white border-l-transparent border-b-transparent rotate-45"></div>
+                  <div className="text-center">
+                    <span className="text-3xl font-bold">{dailyTargetPercent}%</span>
+                    <p className="text-[10px] text-emerald-100 uppercase tracking-wide">Achieved</p>
+                  </div>
+                </div>
+                <p className="text-sm mt-2 font-medium text-emerald-50">{todayHours}h / {dailyGoalHours}h Goal</p>
+                <div className="mt-3 flex items-center gap-1 text-[10px]">
+                  <span className="uppercase tracking-wide text-emerald-100/80 mr-1">Set goal:</span>
+                  {[60, 120, 180].map((minutes) => {
+                    const label = `${minutes / 60}h`;
+                    const active = minutes === dailyGoalMinutes;
+                    return (
+                      <button
+                        key={minutes}
+                        type="button"
+                        onClick={() => setDailyGoalMinutes(minutes)}
+                        className={`px-2 py-1 rounded-full border text-[10px] transition-colors ${active
+                          ? "bg-white text-emerald-700 border-white"
+                          : "border-emerald-400/70 text-emerald-50/90 hover:bg-emerald-500/40"
+                          }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Upcoming Exams */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Upcoming</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {upcomingExams.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No upcoming exams scheduled.</p>
+                ) : (
+                  upcomingExams.map((exam, i) => {
+                    const colorClasses = [
+                      "text-red-600 bg-red-50 dark:bg-red-900/20",
+                      "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
+                      "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20",
+                    ];
+                    const color = colorClasses[i % colorClasses.length];
+                    return (
+                      <div key={exam.id || i} className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-lg flex-shrink-0 flex items-center justify-center ${color}`}>
+                          <CalendarClock className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h5 className="text-sm font-semibold truncate text-slate-800 dark:text-slate-200">{exam.title}</h5>
+                          <p className="text-[11px] text-muted-foreground font-medium">{exam.dateLabel || exam.date}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Streak Small Widget (API-driven) */}
+            <div className="bg-slate-900 text-white rounded-xl p-4 flex items-center justify-between shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-white/10 rounded-full flex items-center justify-center">
+                  <Flame className="h-5 w-5 text-orange-500 fill-orange-500" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">{streak.current || 0} Day Streak</p>
+                  <p className="text-xs text-slate-400">Longest: {streak.longest || 0} days</p>
+                </div>
+              </div>
+              <Button size="sm" variant="secondary" className="h-8 text-xs bg-white text-slate-900 hover:bg-slate-200">View</Button>
+            </div>
+
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
