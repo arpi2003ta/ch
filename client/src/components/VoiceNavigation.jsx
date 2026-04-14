@@ -219,7 +219,7 @@ const VoiceNavigation = () => {
           case 'admin_ai_examiner':
           if (user?.role === 'instructor') {
             toast.success("⚡ Opening ai examiner management");
-            navigate("/ai-examiner/instructor");
+            navigate("/admin-ai-examiner");
             return true;
           } else {
             toast.error("🚫 Access denied: Admin privileges required");

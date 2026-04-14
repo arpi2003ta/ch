@@ -51,7 +51,7 @@ const Navbar = () => {
   };
   const handleAIEXaminerClick = () => {
     if (user?.role == 'instructor') {
-      navigate('ai-examiner/instructor');
+      navigate("admin-ai-examiner");
     } else {
       navigate('/ai-examiner')
     }
@@ -156,11 +156,17 @@ const Navbar = () => {
                       {" "}
                       <Link to="profile">Edit Profile</Link>{" "}
                     </DropdownMenuItem>
-
+                    {user?.role ==="instructor" ? (
                     <DropdownMenuItem onClick={handleCbtClick}>
                       {" "}
-                      CBT Practice
+                      CBT Manage
                     </DropdownMenuItem>
+                    ):(
+                      <DropdownMenuItem onClick={handleCbtClick}>
+                        {" "}
+                        CBT Practice
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={handleAIEXaminerClick}>
                       {" "}
                       AI Examiner

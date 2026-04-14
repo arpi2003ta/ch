@@ -169,7 +169,7 @@ const appRouter = createBrowserRouter([
       },
 
       {
-        path: "ai-examiner/instructor",
+        path: "admin-ai-examiner",
         element: (
           <AdminRoute>
             <InstructorAIExaminer />
@@ -190,6 +190,9 @@ const appRouter = createBrowserRouter([
           { path: "course/create", element: <AddCourse /> },
           { path: "course/:courseId", element: <EditCourse /> },
           { path: "course/:courseId/lecture", element: <CreateLecture /> },
+          { path: "ai-examiner/instructor", element: <InstructorAIExaminer /> },
+          { path: "CBT/manage", element: <InstructorExamPage />},
+          { path: "profile/edit", element: <Profile/>},
           {
             path: "course/:courseId/lecture/:lectureId",
             element: <EditLecture />,

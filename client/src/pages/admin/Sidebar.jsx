@@ -1,4 +1,4 @@
-import { ChartNoAxesColumn, SquareLibrary, MessageSquare } from "lucide-react";
+import { ChartNoAxesColumn, SquareLibrary, MessageSquare, HelpCircle, FileText, Settings} from "lucide-react";
 import React from "react";
 import { Link, Outlet } from "react-router-dom";
 import Chat from "@/components/Chat";
@@ -18,6 +18,18 @@ const Sidebar = () => {
           <Link to="course" className="flex items-center gap-2">
             <SquareLibrary size={22} />
             <h1>Courses</h1>
+          </Link>
+          <Link to="/admin/ai-examiner/instructor" className="flex items-center gap-2">
+            <HelpCircle size={22} />
+            <h1>AI Examiner</h1>
+          </Link>
+          <Link to="CBT/manage" className="flex items-center gap-2">
+            <FileText size={22} />
+            <h1>Manage CBT</h1>
+          </Link>
+          <Link to="profile/edit" className="flex items-center gap-2">
+            <Settings size={22} />
+            <h1>Edit Profile</h1>
           </Link>
 
           <Chat
