@@ -2,10 +2,21 @@ import { Exam, ExamSubmission } from "../models/AIExaminer.model.js";
 import { uploadMedia, deleteMediaFromCloudinary } from "../utils/cloudinary.js";
 import { evaluateNeetOMR } from "../utils/neetOmrEvaluator.js";
 import axios from "axios";
-import { execFile } from "node:child_process";
-import fs from "fs";
-import path from "path";
-import crypto from "crypto";
+
+const OMR_API_URL = process.env.OMR_API_URL || "http://localhost:4000";
+
+export const getStudentAnswers = async (imageUrl, useAi = false) => {
+  const response = await axios.post(`${OMR_API_URL}/api/omr/predict`, {
+    imageUrl,
+    useAi,
+  });
+
+  if (!response.data.success) {
+    throw new Error(response.data.error || "OMR prediction failed");
+  }
+
+  return response.data.answers;
+};
 
 export const uploadExam = async (req, res) => {
   try {
@@ -16,47 +27,42 @@ export const uploadExam = async (req, res) => {
     let newExamData = {};
     let oldPublicIds = [];
 
-    if (name) {
-      newExamData.name = name;
-    }
+    if (name) newExamData.name = name;
 
     if (req.files && req.files.questions) {
       const questionFile = req.files.questions[0];
-      const questionResponse = await uploadMedia(questionFile.path);
+      // pass whole file object — cloudinary.js uses file.mimetype and file.buffer
+      const questionResponse = await uploadMedia(questionFile);
       if (!questionResponse) {
-        return res
-          .status(400)
-          .json({ message: "Error on uploading question file" });
+        return res.status(400).json({ message: "Error on uploading question file" });
       }
       newExamData.questionPaper = {
         url: questionResponse.secure_url,
         publicId: questionResponse.public_id,
       };
-      if (existingExam && existingExam.questionPaper) {
+      if (existingExam?.questionPaper) {
         oldPublicIds.push(existingExam.questionPaper.publicId);
       }
     }
 
     if (req.files && req.files.answerKey) {
       const answerKeyFile = req.files.answerKey[0];
-      const answerKeyResponse = await uploadMedia(answerKeyFile.path);
+      const answerKeyResponse = await uploadMedia(answerKeyFile);
       if (!answerKeyResponse) {
-        return res
-          .status(400)
-          .json({ message: "Error on uploading answerkey file" });
+        return res.status(400).json({ message: "Error on uploading answerkey file" });
       }
       newExamData.answerKey = {
         url: answerKeyResponse.secure_url,
         publicId: answerKeyResponse.public_id,
       };
-      if (existingExam && existingExam.answerKey) {
+      if (existingExam?.answerKey) {
         oldPublicIds.push(existingExam.answerKey.publicId);
       }
     }
 
     if (req.files && req.files.omr) {
       const omrFile = req.files.omr[0];
-      const omrResponse = await uploadMedia(omrFile.path);
+      const omrResponse = await uploadMedia(omrFile);
       if (!omrResponse) {
         return res.status(400).json({ message: "Error on uploading omr file" });
       }
@@ -64,7 +70,7 @@ export const uploadExam = async (req, res) => {
         url: omrResponse.secure_url,
         publicId: omrResponse.public_id,
       };
-      if (existingExam && existingExam.omrSheet) {
+      if (existingExam?.omrSheet) {
         oldPublicIds.push(existingExam.omrSheet.publicId);
       }
     }
@@ -75,9 +81,7 @@ export const uploadExam = async (req, res) => {
 
       if (oldPublicIds.length > 0) {
         await Promise.all(
-          oldPublicIds
-            .filter((id) => id)
-            .map((id) => deleteMediaFromCloudinary(id)),
+          oldPublicIds.filter(Boolean).map((id) => deleteMediaFromCloudinary(id))
         );
       }
 
@@ -87,12 +91,7 @@ export const uploadExam = async (req, res) => {
         exam: updatedExam,
       });
     } else {
-      if (
-        !newExamData.name ||
-        !newExamData.questionPaper ||
-        !newExamData.answerKey ||
-        !newExamData.omrSheet
-      ) {
+      if (!newExamData.name || !newExamData.questionPaper || !newExamData.answerKey || !newExamData.omrSheet) {
         return res.status(400).json({ message: "upload all files" });
       }
       newExamData.instructor = instructorId;
@@ -104,6 +103,7 @@ export const uploadExam = async (req, res) => {
       });
     }
   } catch (err) {
+    console.error("uploadExam error:", err);
     return res.status(400).json({ message: "Server error on exam upload" });
   }
 };
@@ -115,93 +115,20 @@ export const getExam = async (req, res) => {
       return res.status(404).json({ message: "no exam has been uploaded yet" });
     }
 
-    const examDetail = {
-      _id: exam._id,
-      name: exam.name,
-      questionPaperUrl: exam.questionPaper.url,
-      omrSheetUrl: exam.omrSheet.url,
-    };
-
     return res.status(200).json({
       success: true,
       message: "Exam details",
-      examDetail,
+      examDetail: {
+        _id: exam._id,
+        name: exam.name,
+        questionPaperUrl: exam.questionPaper.url,
+        omrSheetUrl: exam.omrSheet.url,
+      },
     });
   } catch (err) {
-    return res.status(400).json({
-      message: "error on hiting getExam controller",
-      error: err,
-    });
+    return res.status(400).json({ message: "error on hitting getExam controller", error: err });
   }
 };
-
-import { fileURLToPath } from "url";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export const getStudentAnswers = async (imageUrl) => {
-  const tempFileName = `omr_${crypto.randomUUID()}.jpg`;
-  const tempPath = path.join(__dirname, tempFileName);
-
-  try {
-    //download image
-    const response = await axios.get(imageUrl, {
-      responseType: "arraybuffer",
-    });
-
-    fs.writeFileSync(tempPath, response.data);
-
-    const scriptPath = path.join(__dirname, "../../omr/omr_pipeline.py");
-
-    return await new Promise((resolve, reject) => {
-      execFile(
-        "python",
-        [scriptPath, "--mode", "student", "--image", tempPath],
-        { maxBuffer: 1024 * 1024 * 10 },
-        (err, stdout, stderr) => {
-          if (err) {
-            console.error("ML stderr:", stderr);
-            return reject(err);
-          }
-
-          try {
-            const cleanOutput = stdout.toString().trim();
-            const answers = JSON.parse(cleanOutput);
-
-            if (!Array.isArray(answers)) {
-              throw new Error("ML output is not an array");
-            }
-
-            resolve(answers);
-          } catch (parseErr) {
-            console.error("ML output parse error:", stdout);
-            reject(parseErr);
-          }
-        },
-      );
-    });
-  } finally {
-    if (fs.existsSync(tempPath)) {
-      fs.unlinkSync(tempPath);
-    }
-  }
-};
-
-const fetchAnswerKey = async (url) => {
-  try {
-    const res = await axios.get(url);
-    const data = res.data;
-    if (!Array.isArray(data)) {
-      console.warn("Answer key is not an array, returning empty array");
-      return [];
-    }
-    return data;
-  } catch (err) {
-    console.error("Failed to fetch answer key:", err.message);
-    return [];
-  }
-};
-
 
 export const submitOmr = async (req, res) => {
   try {
@@ -209,29 +136,17 @@ export const submitOmr = async (req, res) => {
 
     const exam = await Exam.findOne();
     if (!exam) {
-      return res.status(404).json({
-        success: false,
-        message: "Exam not found",
-      });
+      return res.status(404).json({ success: false, message: "Exam not found" });
     }
 
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "Please upload filled OMR",
-      });
+      return res.status(400).json({ success: false, message: "Please upload filled OMR" });
     }
 
+    // CORRECT: pass req.file directly (has .mimetype and .buffer from memoryStorage)
     const omrResponse = await uploadMedia(req.file);
-    console.log("UPLOAD MEDIA RAW RESPONSE 👉", omrResponse);
-    console.log("TYPE 👉", typeof omrResponse);
-
-    console.log("OMR upload response:", omrResponse);
-    if (!omrResponse || !omrResponse.secure_url || !omrResponse.public_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Failed to upload OMR",
-      });
+    if (!omrResponse?.secure_url || !omrResponse?.public_id) {
+      return res.status(400).json({ success: false, message: "Failed to upload OMR to cloudinary" });
     }
 
     const newSubmission = await ExamSubmission.create({
@@ -243,79 +158,56 @@ export const submitOmr = async (req, res) => {
       },
     });
 
+    // Step 1: detect answer key from answer key OMR image
     let answerKey = [];
     try {
-      // ML detects correct answers from answerKey image/PDF
-      answerKey = await getStudentAnswers(exam.answerKey.url);
+      const rawAnswerKey = await getStudentAnswers(exam.answerKey.url, false);
+
+      answerKey = rawAnswerKey
+        .filter((a) => a.selectedOption !== null)
+        .map((a) => {
+          let subject = "physics";
+          if (a.questionNumber >= 51 && a.questionNumber <= 100) subject = "chemistry";
+          if (a.questionNumber >= 101) subject = "biology";
+          return {
+            questionNumber: a.questionNumber,
+            correctOption: a.selectedOption,
+            subject,
+          };
+        });
     } catch (err) {
       console.error("Answer key ML failed:", err.message);
+      return res.status(500).json({ success: false, message: "Answer key processing failed" });
     }
 
-    if (!Array.isArray(answerKey) || answerKey.length === 0) {
-      return res.status(500).json({
-        success: false,
-        message: "Answer key is missing or invalid",
-      });
+    if (answerKey.length === 0) {
+      return res.status(500).json({ success: false, message: "Answer key is missing or invalid" });
     }
 
-    // Map subjects and normalize correctOption
-    answerKey = answerKey.map((a) => {
-      let subject = "physics"; // default
-      if (a.questionNumber >= 51 && a.questionNumber <= 100)
-        subject = "chemistry";
-      if (a.questionNumber >= 101) subject = "biology";
-
-      return {
-        questionNumber: a.questionNumber,
-        correctOption: a.correctOption || a.selectedOption, // fallback
-        subject,
-      };
-    });
-
-    // detect student answers
+    // Step 2: detect student answers from filled OMR
     let detectedAnswers = [];
     try {
-      detectedAnswers = await getStudentAnswers(newSubmission.filledOmr.url);
-    } catch (mlError) {
-      return res.status(500).json({
-        success: false,
-        message: "OMR detection failed",
-      });
+      detectedAnswers = await getStudentAnswers(newSubmission.filledOmr.url, false);
+    } catch (err) {
+      console.error("Student OMR detection failed:", err.message);
+      return res.status(500).json({ success: false, message: "Student OMR detection failed" });
     }
 
-    if (!Array.isArray(detectedAnswers)) {
-      return res.status(500).json({
-        success: false,
-        message: "Invalid ML response",
-      });
-    }
-
-    //  Normalize Answers
+    // Step 3: merge
     const studentAnswersComplete = answerKey.map((q) => {
       const detected = detectedAnswers.find(
-        (a) => a.questionNumber === q.questionNumber,
+        (a) => a.questionNumber === q.questionNumber
       );
-
-      return (
-        detected || {
-          questionNumber: q.questionNumber,
-          selectedOption: null,
-          confidence: 0,
-        }
-      );
+      return detected || { questionNumber: q.questionNumber, selectedOption: null };
     });
 
     newSubmission.detectedMarks = studentAnswersComplete;
 
-    const evaluation = evaluateNeetOMR({
-      answerKey,
-      studentAnswers: studentAnswersComplete,
-    });
-
+    // Step 4: evaluate
+    const evaluation = evaluateNeetOMR({ answerKey, studentAnswers: studentAnswersComplete });
     newSubmission.evaluation = evaluation;
     await newSubmission.save();
 
-    // response
     return res.status(200).json({
       success: true,
       message: "Your Filled OMR Submitted Successfully",
@@ -324,7 +216,7 @@ export const submitOmr = async (req, res) => {
       evaluation,
     });
   } catch (error) {
-    console.error("submitOmr full error ->", error);
+    console.error("submitOmr full error:", error);
     return res.status(500).json({
       success: false,
       message: "Error while submitting OMR",
@@ -333,82 +225,20 @@ export const submitOmr = async (req, res) => {
   }
 };
 
-export const evaluateOmr = async (req, res) => {
-  console.log("evaluateOmr controller hit");
-  try {
-    const { submissionId } = req.params;
-    const { answerKey } = req.body;
-
-    if (!submissionId) {
-      return res.status(400).json({ message: "submissionId is required" });
-    }
-
-    if (!Array.isArray(answerKey)) {
-      return res.status(400).json({ message: "answerKey must be an array" });
-    }
-
-    const submission = await ExamSubmission.findById(submissionId);
-
-    if (!submission) {
-      return res.status(404).json({ message: "submission not found" });
-    }
-
-    // Calling ML API
-    const mlResponse = await axios.post("http://localhost:5001/predict", {
-      imageUrl: submission.filledOmr.url,
-    });
-
-    console.log("ML Response -> ", mlResponse);
-    const studentAnswers = mlResponse.data.answers;
-    console.log("ML Raw Response:", mlResponse.data);
-    console.log("Student Answers:", studentAnswers);
-    console.log("Student Answers Length:", studentAnswers?.length);
-
-    if (!Array.isArray(studentAnswers)) {
-      return res.status(500).json({ message: "ML detection failed" });
-    }
-
-    const evaluation = evaluateNeetOMR({
-      answerKey,
-      studentAnswers,
-    });
-
-    submission.detectedMarks = studentAnswers;
-    submission.evaluation = evaluation;
-    await submission.save();
-
-    return res.status(200).json({
-      success: true,
-      message: "OMR evaluated successfully",
-      detectedMarks: studentAnswers,
-      evaluation,
-    });
-  } catch (error) {
-    return res.status(500).json({
-      message: "error on evaluating OMR",
-      error,
-    });
-  }
-};
-
 export const getExamResult = async (req, res) => {
   try {
     const { submissionId } = req.params;
-
     if (!submissionId) {
       return res.status(400).json({ message: "submissionId is required" });
     }
 
     const submission = await ExamSubmission.findById(submissionId);
-
     if (!submission) {
       return res.status(404).json({ message: "submission not found" });
     }
 
     if (!submission.evaluation) {
-      return res
-        .status(400)
-        .json({ message: "evaluation not available for this submission yet" });
+      return res.status(400).json({ message: "evaluation not available yet" });
     }
 
     return res.status(200).json({
@@ -418,24 +248,18 @@ export const getExamResult = async (req, res) => {
       evaluation: submission.evaluation,
     });
   } catch (err) {
-    return res.status(500).json({
-      message: "error on fetching exam evaluation",
-      error: err,
-    });
+    return res.status(500).json({ message: "error on fetching exam evaluation", error: err });
   }
 };
 
 export const getDetectedAnswers = async (req, res) => {
   try {
     const { submissionId } = req.params;
-
     if (!submissionId) {
       return res.status(400).json({ message: "submissionId is required" });
     }
 
-    const submission =
-      await ExamSubmission.findById(submissionId).select("detectedMarks");
-
+    const submission = await ExamSubmission.findById(submissionId).select("detectedMarks");
     if (!submission) {
       return res.status(404).json({ message: "submission not found" });
     }
@@ -449,5 +273,37 @@ export const getDetectedAnswers = async (req, res) => {
       message: "error on fetching detected answers",
       error: error.toString(),
     });
+  }
+};
+
+export const evaluateOmr = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { answerKey } = req.body;
+
+    if (!submissionId) return res.status(400).json({ message: "submissionId is required" });
+    if (!Array.isArray(answerKey)) return res.status(400).json({ message: "answerKey must be an array" });
+
+    const submission = await ExamSubmission.findById(submissionId);
+    if (!submission) return res.status(404).json({ message: "submission not found" });
+
+    const detectedAnswers = await getStudentAnswers(submission.filledOmr.url, false);
+    if (!Array.isArray(detectedAnswers)) {
+      return res.status(500).json({ message: "ML detection failed" });
+    }
+
+    const evaluation = evaluateNeetOMR({ answerKey, studentAnswers: detectedAnswers });
+    submission.detectedMarks = detectedAnswers;
+    submission.evaluation = evaluation;
+    await submission.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "OMR evaluated successfully",
+      detectedMarks: detectedAnswers,
+      evaluation,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: "error on evaluating OMR", error: error.message });
   }
 };

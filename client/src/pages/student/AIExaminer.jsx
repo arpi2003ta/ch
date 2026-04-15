@@ -30,6 +30,7 @@ const AIExaminer = () => {
           setExamData(response.data.examDetail)
         }
       }catch(err){
+        console.log("error in getting exam details : ", err);
         toast.error("failed to get exam details");
       }
     };
